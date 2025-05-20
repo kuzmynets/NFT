@@ -1,39 +1,63 @@
 <?php
+// public/admin/post_create.php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
-if (empty($_SESSION['admin_id'])) {
-    header('Location: login.php');
-    exit;
-}
-$pdo = require __DIR__ . '/../config.php';
 
-$errors = [];
+$pdo       = require __DIR__ . '/../config.php';
+
+requireAdmin();
+
+$errors    = [];
+$title     = '';
+$description = '';
+$uploadDir = __DIR__ . '/../storage/uploads/';
+$maxSize   = 5 * 1024 * 1024; // 5 MB
+$allowed   = ['image/jpeg', 'image/png', 'image/gif'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Валідація
-    $category = trim($_POST['category']);
-    $title    = trim($_POST['title']);
-    $content  = trim($_POST['content']);
-    if ($category === '') $errors[] = 'Вкажіть категорію';
-    if ($title    === '') $errors[] = 'Вкажіть заголовок';
-    if ($content  === '') $errors[] = 'Вкажіть текст поста';
+    // 1) Валідація заголовка та опису
+    $title       = trim($_POST['title']);
+    $description = trim($_POST['description']);
+    if ($title === '')       $errors[] = 'Вкажіть заголовок';
+    if ($description === '') $errors[] = 'Вкажіть опис';
 
-    // Обробка зображення
-    $filename = null;
-    if (!empty($_FILES['image']['tmp_name'])) {
-        $fn = uniqid().'_'.basename($_FILES['image']['name']);
-        $target = __DIR__ . '/../storage/uploads/' . $fn;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-            $filename = $fn;
-        } else {
-            $errors[] = 'Не вдалося завантажити зображення';
+    // 2) Перевірка файлу
+    if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        $errors[] = 'Будь ласка, завантажте зображення';
+    } else {
+        // перевірка розміру
+        if ($_FILES['image']['size'] > $maxSize) {
+            $errors[] = 'Зображення занадто велике (макс. 5 МБ)';
+        }
+        // використовуємо MIME із $_FILES
+        $mime = $_FILES['image']['type'];
+        if (!in_array($mime, $allowed, true)) {
+            $errors[] = 'Непідтримуваний формат зображення: ' . htmlspecialchars($mime);
+        }
+        // перевіряємо папку
+        if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
+            $errors[] = 'Проблема з папкою для завантажень';
         }
     }
 
-    if (!$errors) {
-        $stmt = $pdo->prepare('
-          INSERT INTO posts (category, image, title, content)
-          VALUES (?, ?, ?, ?)
-        ');
-        $stmt->execute([$category, $filename, $title, $content]);
+    // 3) Зберігання файлу
+    if (empty($errors)) {
+        $ext      = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('nft_') . '.' . $ext;
+        $target   = $uploadDir . $filename;
+        if (!move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
+            $errors[] = 'Не вдалося зберегти картинку на сервері';
+        }
+    }
+
+    // 4) Вставка в БД
+    if (empty($errors)) {
+        $stmt = $pdo->prepare('INSERT INTO nfts (title, description, image) VALUES (?, ?, ?)');
+        $stmt->execute([$title, $description, $filename]);
         header('Location: posts.php');
         exit;
     }
@@ -41,25 +65,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="uk">
-<head><meta charset="utf-8"><title>Додати пост</title></head>
+<head>
+    <meta charset="utf-8">
+    <title>Додати NFT</title>
+</head>
 <body>
-<h1>Додати новий пост</h1>
+<h1>Додати новий NFT</h1>
+
+<!-- Вивід помилок -->
 <?php foreach ($errors as $e): ?>
-    <p style="color:red"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p>
+    <p style="color:red"><?= htmlspecialchars($e, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
+
 <form method="post" enctype="multipart/form-data">
-    <label>Категорія:<br>
-        <input name="category" value="<?= isset($category) ? htmlspecialchars($category, ENT_QUOTES, 'UTF-8') : '' ?>">
-    </label><br><br>
-    <label>Зображення:<br>
-        <input type="file" name="image">
-    </label><br><br>
     <label>Заголовок:<br>
-        <input name="title" value="<?= isset($title) ? htmlspecialchars($title, ENT_QUOTES, 'UTF-8') : '' ?>">
+        <input name="title" value="<?= htmlspecialchars($title, ENT_QUOTES) ?>">
     </label><br><br>
-    <label>Текст:<br>
-        <textarea name="content" rows="5" cols="50"><?= isset($content) ? htmlspecialchars($content, ENT_QUOTES, 'UTF-8') : '' ?></textarea>
+
+    <label>Опис:<br>
+        <textarea name="description" rows="5"><?= htmlspecialchars($description, ENT_QUOTES) ?></textarea>
     </label><br><br>
+
+    <label>Зображення:<br>
+        <input type="file" name="image" accept="image/*" required>
+    </label><br><br>
+
     <button type="submit">Опублікувати</button>
     <a href="posts.php">Скасувати</a>
 </form>

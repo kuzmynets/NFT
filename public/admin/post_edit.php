@@ -1,79 +1,70 @@
 <?php
 session_start();
-if (empty($_SESSION['admin_id'])) {
-    header('Location: login.php');
-    exit;
-}
+
 $pdo = require __DIR__ . '/../config.php';
 
+requireAdmin();
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare('SELECT * FROM posts WHERE id = ?');
+$stmt = $pdo->prepare('SELECT * FROM nfts WHERE id = ?');
 $stmt->execute([$id]);
-$post = $stmt->fetch();
-if (!$post) {
-    die('Пост не знайдено');
+$nft = $stmt->fetch();
+if (!$nft) {
+    die('Запис не знайдено');
 }
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $category = trim($_POST['category']);
-    $title    = trim($_POST['title']);
-    $content  = trim($_POST['content']);
+    $title       = trim($_POST['title']);
+    $description = trim($_POST['description']);
+    if ($title === '')       $errors[] = 'Вкажіть заголовок';
+    if ($description === '') $errors[] = 'Вкажіть опис';
 
-    if ($category === '') $errors[] = 'Вкажіть категорію';
-    if ($title    === '') $errors[] = 'Вкажіть заголовок';
-    if ($content  === '') $errors[] = 'Вкажіть текст поста';
-
-    // Якщо завантажили нове зображення — обробляємо
-    $filename = $post['image'];
-    if (!empty($_FILES['image']['tmp_name'])) {
-        $fn = uniqid().'_'.basename($_FILES['image']['name']);
-        $target = __DIR__ . '/../storage/uploads/' . $fn;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-            $filename = $fn;
-        } else {
-            $errors[] = 'Не вдалося завантажити зображення';
+    // Якщо завантажили нове зображення
+    $filename = $nft['image'];
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $ext      = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('nft_') . '.' . $ext;
+        $target   = __DIR__ . '/../storage/uploads/' . $filename;
+        if (!move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
+            $errors[] = 'Не вдалося зберегти картинку';
         }
     }
 
-    if (!$errors) {
+    if (empty($errors)) {
         $stmt = $pdo->prepare('
-          UPDATE posts
-          SET category = ?, image = ?, title = ?, content = ?
+          UPDATE nfts
+          SET title = ?, description = ?, image = ?
           WHERE id = ?
         ');
-        $stmt->execute([$category, $filename, $title, $content, $id]);
+        $stmt->execute([$title, $description, $filename, $id]);
         header('Location: posts.php');
         exit;
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="uk">
-<head><meta charset="utf-8"><title>Редагувати пост</title></head>
-<body>
-<h1>Редагувати пост #<?= $post['id'] ?></h1>
+<html lang="uk"><head>
+    <meta charset="utf-8"><title>Редагувати NFT</title>
+</head><body>
+<h1>Редагувати NFT #<?= $nft['id'] ?></h1>
 <?php foreach ($errors as $e): ?>
-    <p style="color:red"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p>
+    <p style="color:red"><?= htmlspecialchars($e, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
 <form method="post" enctype="multipart/form-data">
-    <label>Категорія:<br>
-        <input name="category" value="<?= htmlspecialchars($post['category'], ENT_QUOTES, 'UTF-8') ?>">
+    <label>Заголовок:<br>
+        <input name="title" value="<?= htmlspecialchars($nft['title'], ENT_QUOTES) ?>">
+    </label><br><br>
+    <label>Опис:<br>
+        <textarea name="description" rows="5"><?= htmlspecialchars($nft['description'], ENT_QUOTES) ?></textarea>
     </label><br><br>
     <label>Поточне зображення:<br>
-        <?php if ($post['image']): ?>
-            <img src="../storage/uploads/<?= htmlspecialchars($post['image'], ENT_QUOTES, 'UTF-8') ?>" width="150"><br>
+        <?php if ($nft['image']): ?>
+            <img src="../storage/uploads/<?= htmlspecialchars($nft['image'], ENT_QUOTES) ?>" width="150"><br>
         <?php endif; ?>
-        <input type="file" name="image">
+        <input type="file" name="image" accept="image/*">
     </label><br><br>
-    <label>Заголовок:<br>
-        <input name="title" value="<?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>">
-    </label><br><br>
-    <label>Текст:<br>
-        <textarea name="content" rows="5" cols="50"><?= htmlspecialchars($post['content'], ENT_QUOTES, 'UTF-8') ?></textarea>
-    </label><br><br>
-    <button type="submit">Зберегти</button>
+    <button>Зберегти</button>
     <a href="posts.php">Скасувати</a>
 </form>
-</body>
-</html>
+</body></html>
