@@ -1,0 +1,4 @@
+body { font-family: sans-serif; padding: 20px; }
+.gallery { display: flex; flex-wrap: wrap; gap: 10px; }
+.gallery a { text-align: center; width: 150px; text-decoration: none; color: #000; }
+.gallery img { width: 100%; border: 1px solid #ccc; }
