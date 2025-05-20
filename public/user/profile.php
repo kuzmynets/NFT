@@ -6,7 +6,7 @@ ini_set('display_startup_errors',1);
 error_reporting(E_ALL);
 
 session_start();
-$pdo = require __DIR__ . '/config.php';
+$pdo = require __DIR__ . '/../config.php';
 
 // Доступ тільки для залогінених користувачів
 requireUser();
@@ -54,7 +54,7 @@ ob_start();
             <?php if ($likes): ?>
                 <div class="list-group mb-4">
                     <?php foreach ($likes as $l): ?>
-                        <a href="post.php?id=<?= $l['id'] ?>" class="list-group-item list-group-item-action">
+                        <a href="../post.php?id=<?= $l['id'] ?>" class="list-group-item list-group-item-action">
                             <?= htmlspecialchars($l['title'], ENT_QUOTES) ?>
                         </a>
                     <?php endforeach; ?>
@@ -69,7 +69,7 @@ ob_start();
                     <div class="card mb-3">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <a href="post.php?id=<?= $c['post_id'] ?>">
+                                <a href="../post.php?id=<?= $c['post_id'] ?>">
                                     <?= htmlspecialchars($c['title'], ENT_QUOTES) ?>
                                 </a>
                             </h5>

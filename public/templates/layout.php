@@ -35,7 +35,7 @@ function isActive($path) {
                         </li>
                     <?php endif; ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= isActive('profile.php') ?>" href="/profile.php">Профіль</a>
+                        <a class="nav-link <?= isActive('user/profile.php') ?>" href="/user/profile.php">Профіль</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/logout.php">Вийти</a>
