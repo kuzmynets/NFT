@@ -2,14 +2,10 @@
 // public/profile.php
 
 session_start();
-$pdo = require __DIR__ . '/config.php';
+$pdo = require __DIR__ . '/../config.php';
 
 // Захищаємося
-if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
+requireUser();
 $user_id = $_SESSION['user_id'];
 
 // Інформація про користувача
@@ -43,6 +39,7 @@ $comments = $commsStmt->fetchAll();
 <head>
     <meta charset="utf-8">
     <title>Профіль</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <h1>Профіль <?= htmlspecialchars($user['name'], ENT_QUOTES) ?></h1>
@@ -53,7 +50,7 @@ $comments = $commsStmt->fetchAll();
 <?php if ($likes): ?>
     <ul>
         <?php foreach ($likes as $l): ?>
-            <li><a href="post.php?id=<?= $l['id'] ?>">
+            <li><a href="../post.php?id=<?= $l['id'] ?>">
                     <?= htmlspecialchars($l['title'], ENT_QUOTES) ?>
                 </a></li>
         <?php endforeach; ?>

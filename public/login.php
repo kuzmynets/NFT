@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <title>Вхід</title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <h1>Увійти</h1>

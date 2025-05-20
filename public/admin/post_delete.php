@@ -21,6 +21,7 @@ if (!$nft) die('Запис не знайдено');
 <!DOCTYPE html>
 <html lang="uk"><head>
     <meta charset="utf-8"><title>Видалити NFT</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head><body>
 <h1>Видалити NFT “<?= htmlspecialchars($nft['title'], ENT_QUOTES) ?>”?</h1>
 <form method="post">

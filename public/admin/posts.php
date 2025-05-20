@@ -20,6 +20,7 @@ $items = $pdo
 <head>
     <meta charset="utf-8">
     <title>Управління NFT</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <h1>Управління NFT</h1>

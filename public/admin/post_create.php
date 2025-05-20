@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <title>Додати NFT</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <h1>Додати новий NFT</h1>

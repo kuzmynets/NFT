@@ -32,5 +32,11 @@ function requireAdmin() {
     }
 }
 
+function requireUser() {
+    if (!isUserLoggedIn()) {
+        header('Location: ../login.php');
+        exit;
+    }
+}
 // повертаємо PDO для підключення в інших скриптах
 return $pdo;

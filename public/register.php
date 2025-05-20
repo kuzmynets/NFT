@@ -18,10 +18,10 @@ $email   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 4) Зчитування полів
-    $name            = trim($_POST['name'] ?? '');
-    $email           = trim($_POST['email'] ?? '');
-    $password        = $_POST['password'] ?? '';
-    $passwordConfirm = $_POST['password_confirm'] ?? '';
+    $name            = trim(isset($_POST['name']) ? $_POST['name'] : '');
+    $email           = trim(isset($_POST['email']) ? $_POST['email'] : '');
+    $password        = isset($_POST['password']) ? $_POST['password'] : '';
+    $passwordConfirm = isset($_POST['password_confirm']) ? $_POST['password_confirm'] : '';
 
     // 5) Валідація
     if ($name === '') {
@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <title>Реєстрація</title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <h1>Реєстрація</h1>
