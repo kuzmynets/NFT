@@ -1,13 +1,11 @@
 <?php
 // public/admin/post_edit.php
 
-// Вмикаємо показ помилок
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-// Підключаємо конфіг і перевірку ролі
 $pdo = require __DIR__ . '/../config.php';
 requireAdmin();
 
@@ -23,8 +21,8 @@ if (!$post) {
 // Обробка форми редагування поста
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title       = trim($_POST['title']);
-    $description = trim($_POST['description']);
+    $title       = trim(isset($_POST['title']) ? $_POST['title'] : '');
+    $description = trim(isset($_POST['description']) ? $_POST['description'] : '');
     if ($title === '')       $errors[] = 'Вкажіть заголовок';
     if ($description === '') $errors[] = 'Вкажіть опис';
 
@@ -70,81 +68,79 @@ $likeStmt = $pdo->prepare(
 );
 $likeStmt->execute([$id]);
 $likers = $likeStmt->fetchAll();
+
+// Параметри шаблону
+$pageTitle = 'Редагувати NFT #' . $post['id'];
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="utf-8">
-    <title>Редагувати NFT #<?= $post['id'] ?></title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-</head>
-<body>
-<h1>Редагувати NFT #<?= $post['id'] ?></h1>
+    <div class="container mt-4">
+        <h1 class="mb-4"><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?></h1>
 
-<!-- Навігація -->
-<nav>
-    <a href="dashboard.php">Адмін-панель</a>
-    <a href="posts.php">Управління постами</a>
-    <a href="post_create.php">Додати новий пост</a>
-    <a href="../logout.php">Вийти</a>
-</nav>
+        <div class="mb-4">
+            <a href="dashboard.php" class="btn btn-secondary me-2">Адмін-панель</a>
+            <a href="posts.php" class="btn btn-secondary me-2">Управління постами</a>
+            <a href="post_create.php" class="btn btn-success me-2">Додати новий пост</a>
+            <a href="../logout.php" class="btn btn-danger">Вийти</a>
+        </div>
 
-<!-- Форма редагування поста -->
-<?php foreach ($errors as $e): ?>
-    <p style="color:red"><?= htmlspecialchars($e, ENT_QUOTES) ?></p>
-<?php endforeach; ?>
-
-<form method="post" enctype="multipart/form-data">
-    <label>Заголовок:<br>
-        <input name="title" value="<?= htmlspecialchars($post['title'], ENT_QUOTES) ?>">
-    </label><br><br>
-
-    <label>Опис:<br>
-        <textarea name="description" rows="5"><?= htmlspecialchars($post['description'], ENT_QUOTES) ?></textarea>
-    </label><br><br>
-
-    <label>Поточне зображення:<br>
-        <?php if ($post['image']): ?>
-            <img src="../storage/uploads/<?= htmlspecialchars($post['image'], ENT_QUOTES) ?>" width="150"><br>
+        <?php if ($errors): ?>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <?php foreach ($errors as $e): ?>
+                        <li><?= htmlspecialchars($e, ENT_QUOTES) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
         <?php endif; ?>
-        <input type="file" name="image" accept="image/*">
-    </label><br><br>
 
-    <button type="submit">Зберегти</button>
-    <a href="posts.php">Скасувати</a>
-</form>
+        <div class="card mb-5">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заголовок</label>
+                        <input type="text" id="title" name="title" value="<?= htmlspecialchars($post['title'], ENT_QUOTES) ?>" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Опис</label>
+                        <textarea id="description" name="description" rows="5" class="form-control" required><?= htmlspecialchars($post['description'], ENT_QUOTES) ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Поточне зображення</label><br>
+                        <?php if ($post['image']): ?>
+                            <img src="../storage/uploads/<?= htmlspecialchars($post['image'], ENT_QUOTES) ?>" alt="" class="img-thumbnail mb-2" style="max-width:200px;"><br>
+                        <?php endif; ?>
+                        <input type="file" id="image" name="image" accept="image/*" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зберегти</button>
+                    <a href="posts.php" class="btn btn-secondary ms-2">Скасувати</a>
+                </form>
+            </div>
+        </div>
 
-<hr>
-<!-- Коментарі -->
-<h2>Коментарі</h2>
-<?php foreach ($comments as $c): ?>
-    <div class="comment">
-        <p>
-            <strong><?= htmlspecialchars($c['name'], ENT_QUOTES) ?></strong>
-            (<?= $c['created_at'] ?>)
-            <a href="comment_delete.php?comment_id=<?= $c['id'] ?>&post_id=<?= $post['id'] ?>"
-               onclick="return confirm('Видалити цей коментар?')"
-               style="color:red; margin-left:10px;">[Видалити]</a>
-        </p>
-        <p><?= nl2br(htmlspecialchars($c['text'], ENT_QUOTES)) ?></p>
-    </div>
-<?php endforeach; ?>
-
-<hr>
-<!-- Вподобання -->
-<h2>Уподобання</h2>
-<?php if ($likers): ?>
-    <ul>
-        <?php foreach ($likers as $l): ?>
-            <li>
-                <?= htmlspecialchars($l['name'], ENT_QUOTES) ?>
-                (<?= htmlspecialchars($l['email'], ENT_QUOTES) ?>)
-                — <?= $l['created_at'] ?>
-            </li>
+        <h2>Коментарі</h2>
+        <?php foreach ($comments as $c): ?>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-subtitle mb-2 text-muted"><?= htmlspecialchars($c['name'], ENT_QUOTES) ?> <small>(<?= $c['created_at'] ?>)</small></h5>
+                    <p class="card-text"><?= nl2br(htmlspecialchars($c['text'], ENT_QUOTES)) ?></p>
+                    <a href="comment_delete.php?comment_id=<?= $c['id'] ?>&post_id=<?= $post['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Видалити цей коментар?');">Видалити</a>
+                </div>
+            </div>
         <?php endforeach; ?>
-    </ul>
-<?php else: ?>
-    <p>Ще немає вподобань.</p>
-<?php endif; ?>
-</body>
-</html>
+
+        <h2>Уподобання</h2>
+        <?php if ($likers): ?>
+            <ul class="list-group mb-3">
+                <?php foreach ($likers as $l): ?>
+                    <li class="list-group-item">
+                        <?= htmlspecialchars($l['name'], ENT_QUOTES) ?> (<?= htmlspecialchars($l['email'], ENT_QUOTES) ?>) — <?= $l['created_at'] ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>Ще немає вподобань.</p>
+        <?php endif; ?>
+    </div>
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../templates/layout.php';

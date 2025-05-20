@@ -7,7 +7,6 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-// Підключаємо конфіг (повертає PDO та утиліти isUserLoggedIn(), isAdminLoggedIn())
 $pdo = require __DIR__ . '/config.php';
 
 // Отримуємо ID поста
@@ -28,9 +27,7 @@ $likesCount = $countStmt->fetchColumn();
 // Перевірка, чи користувач уже лайкнув
 $userLiked = false;
 if (!empty($_SESSION['user_id'])) {
-    $check = $pdo->prepare(
-        'SELECT 1 FROM likes WHERE post_id = ? AND user_id = ?'
-    );
+    $check = $pdo->prepare('SELECT 1 FROM likes WHERE post_id = ? AND user_id = ?');
     $check->execute([$id, $_SESSION['user_id']]);
     $userLiked = (bool)$check->fetch();
 }
@@ -56,68 +53,85 @@ $likeStmt = $pdo->prepare(
 );
 $likeStmt->execute([$id]);
 $likers = $likeStmt->fetchAll();
+
+// Встановлюємо заголовок і починаємо буфер
+$pageTitle = $post['title'];
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="utf-8">
-    <title><?= htmlspecialchars($post['title'], ENT_QUOTES) ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-<?php if (isAdminLoggedIn()): ?>
-    <nav>
-        <a href="admin/dashboard.php">Адмін-панель</a>
-        <a href="admin/posts.php">Управління постами</a>
-        <a href="admin/post_edit.php?id=<?= $post['id'] ?>">Редагувати пост</a>
-        <a href="index.php">Галерея NFT</a>
-    </nav>
-<?php else: ?>
-    <p><a href="index.php">← Повернутись до галереї</a></p>
-<?php endif; ?>
-
-<h1><?= htmlspecialchars($post['title'], ENT_QUOTES) ?></h1>
-
-<?php if ($post['image']): ?>
-    <img src="storage/uploads/<?= htmlspecialchars($post['image'], ENT_QUOTES) ?>" alt="">
-<?php endif; ?>
-
-<p><?= nl2br(htmlspecialchars($post['description'], ENT_QUOTES)) ?></p>
-
-<hr>
-<!-- Likes -->
-<p>Вподобань: <?= $likesCount ?></p>
-<?php if (!empty($_SESSION['user_id'])): ?>
-    <form action="like.php" method="post" style="display:inline">
-        <input type="hidden" name="post_id" value="<?= $id ?>">
-        <button type="submit"><?= $userLiked ? 'Вподобано' : 'Вподобати' ?></button>
-    </form>
-<?php else: ?>
-    <p><a href="login.php">Увійдіть, щоб вподобати</a></p>
-<?php endif; ?>
-
-<hr>
-<!-- Comments -->
-<h2>Коментарі</h2>
-<?php foreach ($comments as $c): ?>
-    <div class="comment">
-        <p><strong><?= htmlspecialchars($c['name'], ENT_QUOTES) ?></strong> <small>(<?= $c['created_at'] ?>)</small></p>
-        <p><?= nl2br(htmlspecialchars($c['text'], ENT_QUOTES)) ?></p>
+    <div class="row mb-4">
         <?php if (isAdminLoggedIn()): ?>
-            <a href="admin/comment_delete.php?comment_id=<?= $c['id'] ?>&post_id=<?= $post['id'] ?>"
-               onclick="return confirm('Видалити цей коментар?');" style="color:red;">Видалити</a>
+            <div class="col-12">
+                <nav class="nav">
+                    <a class="nav-link" href="admin/dashboard.php">Адмін-панель</a>
+                    <a class="nav-link" href="admin/posts.php">Управління постами</a>
+                    <a class="nav-link" href="admin/post_edit.php?id=<?= $post['id'] ?>">Редагувати пост</a>
+                    <a class="nav-link" href="index.php">Галерея NFT</a>
+                </nav>
+            </div>
+        <?php else: ?>
+            <div class="col-12 mb-3">
+                <a href="index.php" class="btn btn-link">← Повернутись до галереї</a>
+            </div>
         <?php endif; ?>
     </div>
-<?php endforeach; ?>
+
+    <div class="card mb-4">
+        <?php if ($post['image']): ?>
+            <img src="storage/uploads/<?= htmlspecialchars($post['image'], ENT_QUOTES) ?>" class="card-img-top" alt="">
+        <?php endif; ?>
+        <div class="card-body">
+            <h1 class="card-title"><?= htmlspecialchars($post['title'], ENT_QUOTES) ?></h1>
+            <p class="card-text"><?= nl2br(htmlspecialchars($post['description'], ENT_QUOTES)) ?></p>
+        </div>
+    </div>
+
+    <!-- Likes -->
+    <div class="mb-4">
+        <h4>Вподобань: <?= $likesCount ?></h4>
+        <?php if (!empty($_SESSION['user_id'])): ?>
+            <form action="like.php" method="post" class="d-inline">
+                <input type="hidden" name="post_id" value="<?= $id ?>">
+                <button type="submit" class="btn btn-<?= $userLiked ? 'secondary' : 'primary' ?>">
+                    <?= $userLiked ? 'Вподобано' : 'Вподобати' ?>
+                </button>
+            </form>
+        <?php else: ?>
+            <a href="login.php" class="btn btn-outline-primary">Увійдіть, щоб вподобати</a>
+        <?php endif; ?>
+    </div>
+
+    <!-- Comments -->
+    <div class="mb-4">
+        <h2>Коментарі</h2>
+        <?php foreach ($comments as $c): ?>
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h5 class="card-subtitle mb-2 text-muted"><?= htmlspecialchars($c['name'], ENT_QUOTES) ?> <small>(<?= $c['created_at'] ?>)</small></h5>
+                    <p class="card-text"><?= nl2br(htmlspecialchars($c['text'], ENT_QUOTES)) ?></p>
+                    <?php if (isAdminLoggedIn()): ?>
+                        <a href="admin/comment_delete.php?comment_id=<?= $c['id'] ?>&post_id=<?= $post['id'] ?>"
+                           class="card-link text-danger" onclick="return confirm('Видалити цей коментар?');">Видалити</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
 
 <?php if (!empty($_SESSION['user_id'])): ?>
-    <form action="comment.php" method="post">
-        <textarea name="text" rows="4" required placeholder="Ваш коментар..."></textarea><br>
-        <input type="hidden" name="post_id" value="<?= $id ?>">
-        <button type="submit">Додати коментар</button>
-    </form>
+    <div class="mb-4">
+        <h4>Додати коментар</h4>
+        <form action="comment.php" method="post">
+            <div class="mb-3">
+                <textarea name="text" rows="4" class="form-control" required placeholder="Ваш коментар..."></textarea>
+            </div>
+            <input type="hidden" name="post_id" value="<?= $id ?>">
+            <button type="submit" class="btn btn-primary">Додати коментар</button>
+        </form>
+    </div>
 <?php else: ?>
-    <p><a href="login.php">Увійдіть, щоб коментувати</a></p>
+    <p><a href="login.php" class="btn btn-outline-primary">Увійдіть, щоб коментувати</a></p>
 <?php endif; ?>
-</body>
-</html>
+
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/templates/layout.php';

@@ -1,15 +1,15 @@
 <?php
 // public/register.php
 
-// 1) Вивід помилок для дебагу (видаліть у продакшені)
+// Вивід помилок для дебагу (видаліть у продакшені)
 ini_set('display_errors',1);
 ini_set('display_startup_errors',1);
 error_reporting(E_ALL);
 
-// 2) Старт сесії
+// Старт сесії
 session_start();
 
-// 3) Підключення PDO
+// Підключення PDO
 $pdo = require __DIR__ . '/config.php';
 
 $errors = [];
@@ -17,13 +17,13 @@ $name    = '';
 $email   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 4) Зчитування полів
+    // Зчитування полів
     $name            = trim(isset($_POST['name']) ? $_POST['name'] : '');
     $email           = trim(isset($_POST['email']) ? $_POST['email'] : '');
     $password        = isset($_POST['password']) ? $_POST['password'] : '';
     $passwordConfirm = isset($_POST['password_confirm']) ? $_POST['password_confirm'] : '';
 
-    // 5) Валідація
+    // Валідація
     if ($name === '') {
         $errors[] = 'Вкажіть ім’я';
     }
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Паролі не співпадають';
     }
 
-    // 6) Перевірка унікальності email
+    // Перевірка унікальності email
     if (empty($errors)) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
@@ -48,61 +48,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 7) Створення нового користувача
+    // Створення нового користувача
     if (empty($errors)) {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare(
-            'INSERT INTO users (name,email,password_hash,role,created_at)
-             VALUES (?,      ?,    ?,             ?,    NOW())'
+            'INSERT INTO users (name, email, password_hash, role, created_at)
+             VALUES (?, ?, ?, ?, NOW())'
         );
         $stmt->execute([$name, $email, $hash, 'user']);
-        // 8) Редірект на логін
         header('Location: login.php');
         exit;
     }
 }
+
+// Параметри шаблону
+$pageTitle = 'Реєстрація';
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="utf-8">
-    <title>Реєстрація</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-<h1>Реєстрація</h1>
 
-<!-- Вивід помилок -->
-<?php if ($errors): ?>
-    <ul style="color:red">
-        <?php foreach ($errors as $e): ?>
-            <li><?= htmlspecialchars($e, ENT_QUOTES) ?></li>
-        <?php endforeach; ?>
-    </ul>
-<?php endif; ?>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="mb-4 text-center"><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?></h1>
 
-<form method="post" action="register.php">
-    <label>Ім’я:<br>
-        <input type="text" name="name"
-               value="<?= htmlspecialchars($name, ENT_QUOTES) ?>" required>
-    </label><br><br>
+            <?php if ($errors): ?>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        <?php foreach ($errors as $e): ?>
+                            <li><?= htmlspecialchars($e, ENT_QUOTES) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
-    <label>Email:<br>
-        <input type="email" name="email"
-               value="<?= htmlspecialchars($email, ENT_QUOTES) ?>" required>
-    </label><br><br>
+            <form method="post" action="register.php">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Ім’я</label>
+                    <input type="text"
+                           id="name"
+                           name="name"
+                           value="<?= htmlspecialchars($name, ENT_QUOTES) ?>"
+                           class="form-control"
+                           required>
+                </div>
 
-    <label>Пароль:<br>
-        <input type="password" name="password" required>
-    </label><br><br>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email"
+                           id="email"
+                           name="email"
+                           value="<?= htmlspecialchars($email, ENT_QUOTES) ?>"
+                           class="form-control"
+                           required>
+                </div>
 
-    <label>Повторіть пароль:<br>
-        <input type="password" name="password_confirm" required>
-    </label><br><br>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           class="form-control"
+                           required>
+                </div>
 
-    <button type="submit">Зареєструватися</button>
-</form>
+                <div class="mb-3">
+                    <label for="password_confirm" class="form-label">Повторіть пароль</label>
+                    <input type="password"
+                           id="password_confirm"
+                           name="password_confirm"
+                           class="form-control"
+                           required>
+                </div>
 
-<p>Вже є акаунт? <a href="login.php">Увійти</a></p>
-</body>
-</html>
+                <button type="submit" class="btn btn-primary w-100">Зареєструватися</button>
+            </form>
+
+            <p class="mt-3 text-center">
+                Вже є акаунт? <a href="login.php">Увійти</a>
+            </p>
+        </div>
+    </div>
+
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/templates/layout.php';

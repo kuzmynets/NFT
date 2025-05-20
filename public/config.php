@@ -23,7 +23,7 @@ function isUserLoggedIn() {
     return !empty($_SESSION['user_id']);
 }
 function isAdminLoggedIn() {
-    return isUserLoggedIn() && ($_SESSION['role'] ?? '') === 'admin';
+    return isUserLoggedIn() && (isset($_SESSION['role']) ? $_SESSION['role'] : '') === 'admin';
 }
 function requireAdmin() {
     if (!isAdminLoggedIn()) {

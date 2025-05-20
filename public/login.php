@@ -6,14 +6,13 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-
 $pdo   = require __DIR__ . '/config.php';
 $error = '';
 $email = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $pass  = $_POST['password'] ?? '';
+    $email = trim(isset($_POST['email']) ? $_POST['email'] : '');
+    $pass  = isset($_POST['password']) ? $_POST['password'] : '';
 
     if ($email === '' || $pass === '') {
         $error = 'Вкажіть email та пароль.';
@@ -23,11 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($pass, $user['password_hash'])) {
-            // авторизація пройшла
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role']    = $user['role'];
 
-            // редірект
             if ($user['role'] === 'admin') {
                 header('Location: admin/dashboard.php');
             } else {
@@ -38,29 +35,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Невірний email або пароль.';
     }
 }
+
+$pageTitle = 'Увійти';
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="utf-8">
-    <title>Вхід</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-<h1>Увійти</h1>
-<?php if ($error): ?>
-    <p style="color:red;"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
-<?php endif; ?>
-<form method="post" action="login.php">
-    <label>Email:<br>
-        <input type="email" name="email"
-               value="<?= htmlspecialchars($email, ENT_QUOTES) ?>"
-               required>
-    </label><br><br>
-    <label>Пароль:<br>
-        <input type="password" name="password" required>
-    </label><br><br>
-    <button type="submit">Увійти</button>
-</form>
-</body>
-</html>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="mb-4 text-center"><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?></h1>
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+            <?php endif; ?>
+            <form method="post" action="login.php">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" value="<?= htmlspecialchars($email, ENT_QUOTES) ?>" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Увійти</button>
+            </form>
+            <p class="mt-3 text-center">Немає акаунту? <a href="register.php">Реєстрація</a></p>
+        </div>
+    </div>
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/templates/layout.php';
