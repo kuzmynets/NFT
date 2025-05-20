@@ -60,17 +60,9 @@ ob_start();
 ?>
     <div class="row mb-4">
         <?php if (isAdminLoggedIn()): ?>
-            <div class="col-12">
-                <nav class="nav">
-                    <a class="nav-link" href="admin/dashboard.php">Адмін-панель</a>
-                    <a class="nav-link" href="admin/posts.php">Управління постами</a>
-                    <a class="nav-link" href="admin/post_edit.php?id=<?= $post['id'] ?>">Редагувати пост</a>
-                    <a class="nav-link" href="index.php">Галерея NFT</a>
-                </nav>
-            </div>
         <?php else: ?>
             <div class="col-12 mb-3">
-                <a href="index.php" class="btn btn-link">← Повернутись до галереї</a>
+                <a href="index.php" class="btn btn-primary mt-auto">← Повернутись до галереї</a>
             </div>
         <?php endif; ?>
     </div>

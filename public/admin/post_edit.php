@@ -77,10 +77,8 @@ ob_start();
         <h1 class="mb-4"><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?></h1>
 
         <div class="mb-4">
-            <a href="dashboard.php" class="btn btn-secondary me-2">Адмін-панель</a>
             <a href="posts.php" class="btn btn-secondary me-2">Управління постами</a>
             <a href="post_create.php" class="btn btn-success me-2">Додати новий пост</a>
-            <a href="../logout.php" class="btn btn-danger">Вийти</a>
         </div>
 
         <?php if ($errors): ?>
